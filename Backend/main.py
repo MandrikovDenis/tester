@@ -6,6 +6,15 @@ from fastapi.middleware.cors import CORSMiddleware
 models.Base.metadata.create_all(bind=database.engine)
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 @app.post("/run-test/")
 def run_test(request: TestRequest, background_tasks: BackgroundTasks):
     test = crud.create_test(request.url, request.scenario)
@@ -15,14 +24,3 @@ def run_test(request: TestRequest, background_tasks: BackgroundTasks):
 @app.get("/tests/")
 def get_tests():
     return crud.get_all_tests()
-
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Лучше указать конкретный домен на проде
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)

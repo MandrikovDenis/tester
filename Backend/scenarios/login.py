@@ -1,6 +1,6 @@
 def run(driver):
     try:
-        driver.get(driver.current_url + "/login")
+        driver.get(driver.current_url + "/auth")
         driver.find_element("id", "email").send_keys("admin@example.com")
         driver.find_element("id", "password").send_keys("123456")
         driver.find_element("id", "submit").click()
