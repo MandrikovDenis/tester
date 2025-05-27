@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'WebTest Pilot',
-  description: 'Automated Web Testing with AI Suggestions',
+  title: 'WebTest',
+  description: 'Automated Web Testing',
 };
 
 export default function RootLayout({

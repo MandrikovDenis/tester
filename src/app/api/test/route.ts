@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     driver = await new Builder()
       .forBrowser('chrome')
       .setChromeOptions(options)
-      .setChromeService(service) // указываем вручную сервис
+      .setChromeService(service) 
       .build();
 
     logs.push('🔍 Проверка доступности сайта...');
@@ -43,17 +43,62 @@ export async function POST(req: Request) {
     await sleep(2000);
 
     logs.push('🔐 Тест авторизации...');
-    const loginInput = await driver.findElement(By.name('email'));
-    const passwordInput = await driver.findElement(By.name('password'));
-    const loginButton = await driver.findElement(By.css('button[type="submit"]'));
+    let loginInput = await driver.findElement(By.name('email'));
+    let passwordInput = await driver.findElement(By.name('password'));
+    let loginButton = await driver.findElement(By.css('button[type="submit"]'));
 
-    await loginInput.sendKeys('test@example.com');
-    await passwordInput.sendKeys('password123');
-    await loginButton.click();
+    const loginTests = [
+      { email: 'invalid@example.com', password: 'password123', expectedSuccess: false },
+      { email: 'test@example.com', password: 'wrongpass', expectedSuccess: false },
+      { email: 'test@example.com', password: `' OR 1=1 --`, expectedSuccess: false },
+      { email: 'test@example.com', password: '<script>', expectedSuccess: false },
+      { email: 'test@example.com', password: 'password123', expectedSuccess: true },
+    ];
 
-    // Задержка 2 секунды
-    await sleep(2000);
+    let loginSuccess = false; // Переменная для отслеживания успешного логина
 
+    for (const test of loginTests) {
+      logs.push(`🔐 Пробуем логин: ${test.email} / ${test.password}`);
+
+      await loginInput.clear();
+      await passwordInput.clear();
+      await loginInput.sendKeys(test.email);
+      await passwordInput.sendKeys(test.password);
+      await loginButton.click();
+      await sleep(1000);
+
+      const currentUrl = await driver.getCurrentUrl();
+
+      if (test.expectedSuccess) {
+        await driver.wait(until.urlContains('/dashboard'), 3000);
+        logs.push('✅ Успешный вход прошёл корректно.');
+        loginSuccess = true; // Успешный логин
+        break; // Прерываем цикл, так как авторизация прошла успешно
+      } else {
+        await sleep(1000); // Подождать, что не было перехода
+        const currentUrl = await driver.getCurrentUrl();
+        if (!currentUrl.includes('/dashboard')) {
+          logs.push('✅ Ошибка входа корректно обработана.');
+        } else {
+          logs.push('❌ Ошибка: был переход при неправильных данных.');
+        }
+      }
+
+      // Перезагрузка страницы перед следующей попыткой
+      await driver.get(url);
+      await sleep(1000);
+
+      // Повторный поиск элементов (страница перезагружена)
+      loginInput = await driver.findElement(By.name('email'));
+      passwordInput = await driver.findElement(By.name('password'));
+      loginButton = await driver.findElement(By.css('button[type="submit"]'));
+    }
+
+    if (!loginSuccess) {
+      throw new Error('Не удалось авторизоваться с корректными данными');
+    }
+
+    // После успешного логина проверяем, что мы на /dashboard
     await driver.wait(until.urlContains('dashboard'), 5000);
     logs.push('✅ Авторизация прошла успешно.');
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function TestPage() {
@@ -12,16 +12,17 @@ export default function TestPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const hasRun = useRef(false); 
+
   useEffect(() => {
-    if (!site) return;
+    if (!site || hasRun.current) return;
+    hasRun.current = true; 
 
     const runTest = async () => {
       try {
         const res = await fetch('/api/test', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: site }),
         });
 
@@ -30,7 +31,7 @@ export default function TestPage() {
         setLogs(data.logs || []);
 
         setTimeout(() => {
-          router.push(`/report?site=${encodeURIComponent(site)}&status=${data.status}`);
+          router.push(`/report?site=${encodeURIComponent(site)}&status=${data.status}&testId=${data.testId}`);
         }, 2000);
       } catch (err: any) {
         setError('Ошибка при выполнении тестов.');
